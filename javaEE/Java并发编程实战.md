@@ -48,7 +48,7 @@
 
 要避免静态条件，必须确保其他线程只能在修改操作之前或者之后读取或者修改，而而不是在修改状态的过程中。
 
-> 可以使用原子类型AtomicXXX类的incrementAndGet()方法代替count++
+> 可以使用原子类型`AtomicXXX`类的`incrementAndGet()`方法代替count++
 
 ####  内置锁
 
@@ -70,11 +70,11 @@
 
 **重排序**：在编译器和处理时与运行时，可能对操作进行顺序进行进行重排序，所以对内存操作的顺序无法正确判断。
 
-**非原子的64位操作**：在java中，long与double类型，JVM允许把其拆分成2个32位的进行计算。如果对这个变量的读操作和写操作在不同的线程中进行，可能就读取到错误的数据。
+**非原子的64位操作**：在Java中，long与double类型，JVM允许把其拆分成2个32位的进行计算。如果对这个变量的读操作和写操作在不同的线程中进行，可能就读取到错误的数据。
 
 #### Volatile变量
 
-这个通过内存栅栏的方式在jvm上实现的关键字。提供了一种稍弱的同步机制，把变量声明成volatile类型之后，编译器和运行时都会注意到这个变量需要共享，我已不会吧这个变量上的操作和其他内存一起**重排序**。
+这个通过内存栅栏的方式在Jvm上实现的关键字。提供了一种稍弱的同步机制，把变量声明成volatile类型之后，编译器和运行时都会注意到这个变量需要共享，我已不会吧这个变量上的操作和其他内存一起**重排序**。
 
 + 使用场景：
   1. 确保其自身状态的可见性
@@ -132,7 +132,7 @@ public class SafeListen{
 
 这些线程的值保存在Thead对象中，线程终止之后，这些值会被作为垃圾回收
 
-+ 当需要把一个单线程应用移植到多线程环境是，可以把共享的全局变量转换成ThreadLocal对象，以维持这个线程的安全性。
++ 当需要把一个单线程应用移植到多线程环境是，可以把共享的全局变量转换成`ThreadLocal`对象，以维持这个线程的安全性。
 
 + 框架可以通过这个类读取事务上下文
 
@@ -172,7 +172,7 @@ Java内存模型为不可变对象提供了一种特殊的初始化来保证初�
 >  public static Holder hoder = new Holder();
 >  ```
 >
->2. 把对象的引用保存到一个volatile类型的域或者AtomicRefance对象中
+>2. 把对象的引用保存到一个volatile类型的域或者`AtomicRefance`对象中
 >
 >3. 把对象的引用保存到一个正确构造的final类型域中
 >
@@ -245,17 +245,17 @@ synchronize在字节码中会编译成**monitorenter**和**monitorexit**，用�
 
 如果一个类是由多个独立且线程安全的状态变量组成，并且在所有的操作中都不包括无效的状态转换那么可以把线程安全性委托给底层的状态变量。
 
-比如把线程安全性委托给底层的**ConcurrentHashMap**，这个Map中的元素是线程安全的且可变的，
+比如把线程安全性委托给底层的`ConcurrentHashMap`，这个Map中的元素是线程安全的且可变的，
 
 ## 基础构建模块
 
 ### 同步容器类
 
-同步容器类包括早期的Vector（基本弃用）和Hashtable（**ConcurrentHashMap**（一致性hashmap）他不香吗），这些类的创建基本就是由Collections.synchronizedXxx等工厂方法创建的。
+同步容器类包括早期的Vector（基本弃用）和`Hashtable`（**ConcurrentHashMap**（一致性hashmap）他不香吗），这些类的创建基本就是由`Collections.synchronizedXxx`等工厂方法创建的。
 
 ### 迭代容器
 
-现在的许多容器也没有消除**复合操作**的问题，对容器进行直接迭代的标准方式都是使用Iterator。但是这不能避免在迭代的过程中，其他线程也会并发的修改容器，所以很多容器的解决方案就是发现迭代时被修改了就马上抛出concurrentModificationException，但只能当做并发问题的预警警示器
+现在的许多容器也没有消除**复合操作**的问题，对容器进行直接迭代的标准方式都是使用Iterator。但是这不能避免在迭代的过程中，其他线程也会并发的修改容器，所以很多容器的解决方案就是发现迭代时被修改了就马上抛出`concurrentModificationException`，但只能当做并发问题的预警警示器
 
 ```java
 		//使用迭代器来遍历list
@@ -272,21 +272,86 @@ synchronize在字节码中会编译成**monitorenter**和**monitorexit**，用�
 
 ### 并发容器
 
-ConcurrentHashMap（使用分段锁），CopyOnWriteArrayList（写入时复制，一般在读操作远多于写操作时使用），
+`ConcurrentHashMap`（使用分段锁），`CopyOnWriteArrayList`（写入时复制，一般在读操作远多于写操作时使用），
 
 + 使用并发容器来代替同步容器，可以极大的提高伸缩性和降低风险
 
 ### BlockingQueue和生产者与消费者模式
 
-生产者不需要知道消费者的数量和状态，只需要把东西生产了交付个阻塞队列，同理，消费者也自己从阻塞队列中取值简化了生产者和消费者模式，
+生产者不需要知道消费者的数量和状态，只需要把东西生产了交付个阻塞队列，同理，消费者也自己从阻塞队列中取值简化了生产者和消费者模式，例为单消费者，单生产者的例子
+
+```java
+package bq;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+public class BlockingQ {
+    BlockingQueue<apple> bq = new ArrayBlockingQueue<apple>(5);
+
+    public static void main(String[] args) throws InterruptedException {
+        BlockingQ blockingQ = new BlockingQ();
+        new Thread(blockingQ::product).start();
+        new Thread(blockingQ::customer).start();
+    }
+
+    public void product() {
+        try {
+            for (int i = 0; i < 5; i++) {
+                bq.put(new apple("red", i));
+                // TimeUnit.SECONDS.sleep(1);
+                System.out.println(Thread.currentThread().getName() + "放置了apple");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void customer() {
+        try {
+            for (int i = 0; i < 5; i++) {
+                bq.take();
+                System.out.println(Thread.currentThread().getName() + "拿走了apple");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class apple {
+    String color;
+    int size;
+
+    public apple(String color, int size) {
+        this.color = color;
+        this.size = size;
+    }
+}
+
+```
+
+#### BlockingQueue的四组API
+
+1. 抛出异常
+2. 不抛出异常
+3. 阻塞等待
+4. 超时等待
+
+| 方式     | 抛出异常 | 不抛出异常       | 阻塞等待 | 超时等待                    |
+| -------- | -------- | ---------------- | -------- | --------------------------- |
+| 添加操作 | add      | offer            | put      | offer(obj,timeOut,TimeUnit) |
+| 移除操作 | remove   | poll（返回null） | take     | poll(timeOut,TimeUnit)      |
+| 查看队首 | element  | peek             |          |                             |
 
 ### 阻塞方法和中断方法
 
 Thread提供了interrupt()中断方法，用于查询线程已经被中断或者中断线程，返回一个boolean属性。
 
-> 解决InterruptedException的方案
+> 解决`InterruptedException`的方案
 >
-> + 传递InterruptionException，可以把这异常传递给这个方案的调用者
+> + 传递`InterruptionException`，可以把这异常传递给这个方案的调用者
 >
 > + 恢复中断
 >
@@ -331,7 +396,7 @@ Thread提供了interrupt()中断方法，用于查询线程已经被中断或者
   + Complete：运行完成
   + Running ：正在运行
 
-  当运行完成时，FutureTask会停在这状态上
+  当运行完成时，`FutureTask`会停在这状态上
 
 #### 信号量
 
@@ -340,6 +405,16 @@ Thread提供了interrupt()中断方法，用于查询线程已经被中断或者
 个人感觉就是PV操作。
 
 #### 栅栏
+
+juc包中提供了`CyclicBarrier`（循环栅栏）。
+
+```java
+public int await() throws InterruptedException, BrokenBarrierException
+public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException
+```
+
+- 线程调用 await() 表示自己已经到达栅栏
+- `BrokenBarrierException` 表示栅栏已经被破坏，破坏的原因可能是其中一个线程 await() 时被中断或者超时
 
 栅栏类似于闭锁，他可以阻塞一个线程直到摸个事件的发生，栅栏于闭锁的区别在于，**所有线程必须通道到达栅栏维持，才能继续执行，**
 
@@ -371,7 +446,7 @@ hashMap不是线程安全的，所以为了确保线程安全性，但是会带�
 
 #### 使用ConcurrentHashMap替代
 
-虽然是使用了行级锁的**ConcurrentHashMap**，但是同样带来了并发性问题，而且科技风会让一个值被获得多次，
+虽然是使用了行级锁的`ConcurrentHashMap`，但是同样带来了并发性问题，而且科技风会让一个值被获得多次，
 
 #### 基于FutureTask
 
@@ -462,3 +537,438 @@ public class Memoizer<A, V> implements Computable<A, V> {
 
 ## 任务执行
 
+**任务**通常是一项抽象并且离散的一些单元。
+
+可以把应用程序分解到多个任务中，可以简化程序的组织结构，提供一种自然的事务边界来优化错误的恢复过程
+
+### 在线程中执行任务
+
+1. 找出任务边界
+2. 任务并不依赖其他的任务的状态、结果、边界效应。
+3. 多数web服务器的任务边界是一独立的客户请求为边界
+
+#### 串行的处理任务
+
+在应用服务中，使用串行处理机无法提供高吞吐量和快速响应性。
+
+#### 显式的创建线程
+
+缺陷：
+
++ 线程的生命周期的开销非常高
++ 资源消耗，活跃的线程会消耗系统资源，大量的空闲资源会占用许多内存
++ 稳定性
++ 可创建线程的数量上存在一个限制，可能因为这个限制，在高请求下会产生运行时异常
+
+### Executor框架（用户级的调度器/线程池）
+
+```java
+public interface Executor{//线程池的Executor接口
+    void executor(Runnable command);
+}
+```
+
+他提供了一种标准的方法被任务的提交过程可执行过程解耦开来，使用**Runnable**来表示任务
+
+#### 线程池
+
+构建线程池的几种方法，一共有4种，具体是什么没答出来
+
+​			Executors类中有四种**静态工厂**方法
+
++ **newCachedThreadPool** 创建一个可以缓存的线程池，如果线程池长度超过处理需要，可以回收线程或者新建线程
+
++ **newFixThreadPool**创建定长线程池，超出的线程在queue队列等待
+
++ **newScaneduledThreadPool** 创建一个定长线程池，支持定时和周期性任务执行
+
++ **newSingleThreadExecutor**创建一个单线程的线程池，在唯一的工作线程执行任务，保证按指定顺序进行。（FIFO，LIFO，优先级）
+
+  都是对`ThreadPoolExecutor`的使用，传了不同的参数
+
+#### Executor的生命周期
+
+生命周期有三种状态：
+
++ 运行
++ 关闭
++ 终止
+
+有`ExecutorService`接口,继承了Executor接口，添加了一些生命周期的管理方法
+
+`shutdown`方法平缓的执行结束
+
+`shutdownNow`粗暴的执行结束
+
+### 任务的并行性
+
+#### 携带结果的Callable与Future
+
+对于Runnable，Callable是一种更好的抽象，例如执行数据库的查询时，一般是需要从主入口点返回一个值。
+
+Runnable和callable都是描述的抽象的任务计算。有四个生命周期：创建、提交、开始、完成。在Executor框架中，已经开始的任务需要需求，需要他们自身响应中断（interrupt）
+
+Future表示一个任务的生命周期，并提供了响应的方案；判断师傅已经完成了取消以及获取任务的结果。**任务的生命周期只能前进**，某个任务完成时，就停留在“完成”状态上。
+
+`get()`方法用于**状态依赖**的内置特性，因此调用者不需要知道任务的状态，此外在提交和获得结果中包含了安全发布属性也确保了这个方法的调用是线程安全的。
+
+#### 完成服务
+
+`CompletionService`可以实现判断任务是否完成
+
+它把Executor和BlockingQueue的功能融合在了一起可预测把Callable任务交付，然后使用类似队列的操作获取已经完成的结果（Future类型）
+
+## 任务的取消与关闭
+
+Java里面没有任何一种机制可以让线程安全的终止。但是他提供了中断（Interruption），这是一种**协助机制**，可以让一个线程停止另一个线程的当前工作
+
+### 任务取消
+
+导致任务取消的原因有：
+
++ 用户请求取消
++ 有时间限制的取消
++ 应用程序事件
++ 错误
++ 关闭
+
+### 中断
+
+**中断，通常是实现取消的最合理的方式**
+
+每一个线程都有一个boolean类型的中断状态，线程中断时，这个线程的中断状态将被设置为true，Thread类中包含了中断线程以及查询中断线程的方法，
+
+```java
+public class Thread{
+	public void interrupt(){};//中断目标线程
+    public boolean isInterrupted(){};//返回目标线程中断状态
+    public static boolean interrupted(){};//q清除当前线程的中断状态
+}
+```
+
+使用阻塞库时，`Thread.sleep()`,`Object.wait()`,都会检查线程何时中断，并在发现从中断时提前返回。
+
+ **调用interrupt并不意味着立即停止目标线程正在进行的工作，而是传递了请求中断的信息**
+
+interrupt并不会真正的中断一个线程，而是发出一个请求，然后由线程在合适的地方中断自己。
+
+```java
+import java.util.concurrent.BlockingQueue;
+
+public class Producer extends Thread {
+    private final BlockingQueue<Integer> queue;
+
+    public Producer(BlockingQueue<Integer> queue) {
+        this.queue = queue;
+    }
+
+    @Override
+    public void run() {
+        try {
+            Integer p = 1;
+            while (!Thread.currentThread().isInterrupted()){
+                queue.put(p);
+            }
+        } catch (InterruptedException e) {
+            //允许线程退出
+            e.printStackTrace();
+        }
+    }
+    
+    public void cancel(){
+        this.interrupt();
+    }
+}
+```
+
+#### 中断策略
+
+处理`InterruptedException`有两种策略：
+
++ 传递异常
++ 恢复中断状态
+
+最合理的中断策略应该是以某种形式的线程级操作取消和服务级操作取消。
+
+如果要把中断异常传递给调用者之外，还需要进行其他操作，那么应该在捕获异常之后恢复中断状态
+
+```java
+Thread.currentThread.interrupt();
+```
+
+#### 响应中断
+
+#### 对阻塞的事件处理中断
+
+##### 改写interrupt
+
+```java
+
+```
+
+
+
+##### 使用newTaskFor来封装取消操作
+
+```java
+
+```
+
+### 停止基于线程的服务
+
+> 对于持有线程的服务，只要服务的时间大于创建线程的方法存在的时间，那么就应该提供生命周期方法
+
+## 线程池的使用
+
+有些任务需要明确的指定执行策略：
+
++ 依赖性任务：如果线程池中的任务需要依赖其他任务的活动，那么就隐含的给执行策略带来了约束
++ 使用线程封闭机制的任务：单线程的Executor可以对并发性做出更强的承诺，对象封闭在任务线程中，使得线程中的任务访问这个对象时不会同步，
++ 对响应时间敏感的任务：把每个运行时间长的任务交给单线程的Executor中，会降低Executor管理服务的响应性
++ 使用ThreadLocal的任务：ThreadLocal可以让每个线程都拥有一个变量的私有复制。只有当线程本地值的什么周期受限于任务的生命周期时，在线程池中使用ThreadLocal才有意义，而且在线程池中的线程不应该使用ThreadLocal在任务之间传递值
+
+### 线程饥饿死锁
+
+一个任务依赖于其他任务，那么可能产生死锁。
+
+若所有正在执行任务的线程因为等待其他仍在工作队列中的任务而发生阻塞，那么就会发生**线程饥饿死锁**。
+
+### 设置线程池的大小
+
+对于计算密集型任务而言，在有N个CPU的环境中，一般设在N+1个线程为最优。
+
+对于使用I/O操作或是其他阻塞操作的任务时，线程池应该更大
+
+### 配置ThreadPoolExecutor
+
+通过Executors中的工厂方法，基于`ThreadPoolExecutor`实现了一个稳定灵活的线程池
+
+```java
+public ThreadPoolExecutor(int corePoolSize,//线程池的大小
+                          int maximumPoolSize,//线程池的最大线程数
+                          long keepAliveTime,//没有线程任务执行时最多保持多久时间才会停止
+                          TimeUnit unit,//参数keepAliveTime的时间单位，有7种取值
+                          BlockingQueue workQueue,//一个阻塞队列，用于存储等待执行的任务，影响线程池的排队策略
+                          ThreadFactory threadFactory,//用于设置线程的工厂，
+                          RejectedExecutionHandler handler);//当拒绝处理任务时的策略（饱和策略），有以下四种策略
+```
+
+```text
+1、AbortPolicy：直接抛出异常。
+2、CallerRunsPolicy：只用调用者所在线程来运行任务。
+3、DiscardOldestPolicy：丢弃队列里最近的一个任务，并执行当前任务。
+4、DiscardPolicy：不处理，丢弃掉。
+5、也可以根据应用场景需要来实现RejectedExecutionHandler接口自定义策略。如记录日志或持久化不能处理的任务。
+```
+
+#### 线程的创建与消耗
+
+线程池的基本大小，最大大小，以及存活时间等硬说共同负责线程的创建于销毁
+
+```java
+
+    public static void main(String[] args) {
+        //创建使用单个线程的线程池
+        ExecutorService es1 = Executors.newSingleThreadExecutor();
+        for (int i = 0; i < 10; i++) {
+            es1.submit(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + "正在执行任务");
+                }
+            });
+        }
+        //创建使用固定线程数的线程池
+        ExecutorService es2 = Executors.newFixedThreadPool(3);
+        for (int i = 0; i < 10; i++) {
+            es2.submit(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + "正在执行任务");
+                }
+            });
+        }
+        //创建一个会根据需要创建新线程的线程池
+        ExecutorService es3 = Executors.newCachedThreadPool();
+        for (int i = 0; i < 20; i++) {
+            es3.submit(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + "正在执行任务");
+                }
+            });
+        }
+        //创建拥有固定线程数量的定时线程任务的线程池
+        ScheduledExecutorService es4 = Executors.newScheduledThreadPool(2);
+        System.out.println("时间：" + System.currentTimeMillis());
+        for (int i = 0; i < 5; i++) {
+            es4.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("时间："+System.currentTimeMillis()+"--"+Thread.currentThread().getName() + "正在执行任务");
+                }
+            },3, TimeUnit.SECONDS);
+        }
+        //创建只有一个线程的定时线程任务的线程池
+        ScheduledExecutorService es5 = Executors.newSingleThreadScheduledExecutor();
+        System.out.println("时间：" + System.currentTimeMillis());
+        for (int i = 0; i < 5; i++) {
+            es5.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("时间："+System.currentTimeMillis()+"--"+Thread.currentThread().getName() + "正在执行任务");
+                }
+            },3, TimeUnit.SECONDS);
+        }
+```
+
++ `newFixedThreadPool`和`newSingleThreadPool`默认使用一个无界的`LinkedBlockingQueue`。当所有线程都处于忙碌状态是，任务将在队列中等候。
+
++ 使用有界队列来存放时，队列的大小与线程池的大小需要同步调节。
++ `SynchronousQueue`用于非常大或是无界的线程池，让任务避免排队，但这不是一个真正的队列，而是一种在线程中进行移交的机制，`newCachedThreadPool`就使用中这个机制
+
+> 当线程中存在依赖时，这时就应该选用无界的线程池，已避免导致线程饥饿死锁的问题
+
+#### 线程工厂
+
+当线程需要创建线程时的，都是通过线程工厂方法。
+
+默认的线程工厂方法将创建一个新的、非守护的线程，创建一个线程调用`newThread`
+
+```java
+public interface ThreadFactory{
+    Thread newThead(Runnable r);
+}
+```
+
+可以通过自定义的线程工厂，创建了新的myThread。
+
+#### 定制ThreadPoolExecutor
+
+调用完构造函数之后，仍然可以通过set来修改大多数传递给它的构造参数。 
+
+## 活跃性、性能、测试
+
++ 我们使用锁来保证线程安全，但是可能导致锁**顺序死锁**
+
++ 我们使用线程池和信号量来限制对资源的使用，但是这些限制的行为可能导致**资源死锁**
+
+## 活跃性危险
+
+### 死锁
+
+产生死锁的条件:
+
+1. **互斥条件**。即某个资源在一段时间内只能由一个进程占有，不能同时被两个或两个以上的进程占有。这种独占资源如CD-ROM驱动器，打印机等等，必须在占有该资源的进程主动释放它之后，其它进程才能占有该资源。这是由资源本身的属性所决定的。如独木桥就是一种独占资源，两方的人不能同时过桥。
+2. **不可抢占条件**。进程所获得的资源在未使用完毕之前，资源申请者不能强行地从资源占有者手中夺取资源，而只能由该资源的占有者进程自行释放。如过独木桥的人不能强迫对方后退，也不能非法地将对方推下桥，必须是桥上的人自己过桥后空出桥面（即主动释放占有资源），对方的人才能过桥。
+3. **占有且申请条件**。进程至少已经占有一个资源，但又申请新的资源；由于该资源已被另外进程占有，此时该进程阻塞；但是，它在等待新资源之时，仍继续占用已占有的资源。还以过独木桥为例，甲乙两人在桥上相遇。甲走过一段桥面（即占有了一些资源），还需要走其余的桥面（申请新的资源），但那部分桥面被乙占有（乙走过一段桥面）。甲过不去，前进不能，又不后退；乙也处于同样的状况。
+4. **循环等待条件**。存在一个进程等待序列{P1，P2，...，Pn}，其中P1等待P2所占有的某一资源，P2等待P3所占有的某一源，......，而Pn等待P1所占有的的某一资源，形成一个进程循环等待环。就像前面的过独木桥问题，甲等待乙占有的桥面，而乙又等待甲占有的桥面，从而彼此循环等待。
+
+死锁的解除就是破坏这几种条件
+
++ Java解决死锁并不会像数据库系统（资源剥夺）这么强大，死锁是，恢复程序的唯一方式就是重启并终止他。
+
+**应该在设计时就避免产生顺序死锁：确保线程在获取多个锁时采用一致性的顺序。**
+
+### 其他活跃性危险
+
++ 饥饿
++ 糟糕的响应性
++ 活锁（一般在事务响应的程序中）尝试引入随机性，解决活锁问题
+
+## 性能可伸缩性
+
+线程的额外开销：
+
++ 线程之间的协调（加锁、触发信号、内存同步……）
++ 增加的上下文切换（需要保存寄存器状态到线程自己的栈中，上下文切换的信息会一直被保存在CPU的内存中，直到被再次使用）
++ 线程的创建以及销毁
++ 线程的调度
+
+### 可伸缩性
+
+> 当增加计算资源时（cpu、io，内存……），程序的吞吐量或者处理能力也在响应的增加
+
+#### 上下文切换
+
+引起线程上下文切换的原因如下 
+
+1. 当前正在执行的任务完成，系统的CPU正常调度下一个任务。
+2. 当前正在执行的任务遇到I/O等阻塞操作，调度器挂起此任务，继续调度下一个任务。
+3. 多个任务并发抢占锁资源，当前任务没有抢到锁资源，被调度器挂起，继续调度下一个任务。
+4. 用户的代码挂起当前任务，比如线程执行sleep方法，让出CPU。
+5. 硬件中断。 
+
+#### 锁的竞争
+
+有3种方式可以减少锁的竞争程度：
+
+1. 减少锁持有的时间
+
+2. 降低锁的请求的频率
+
+3. 使用带有协调机制的独占锁，这些机制运行更高的并发性
+
+   
+
+# 高级篇
+
+## 显式锁
+
+### Lock与ReentrantLock
+
+```java
+public interface Lock{
+    void lock();
+    void lockInterruptibly();//获取可中断的锁
+    boolean tryLock();
+    boolean tryLock(long timeout,TimeUint unit);//带有时间限制的锁，持有锁时间超时（没在规定时间完成操作就让代码失败，并需要释放锁）
+    void unlock();
+    Condition newCondition();
+}
+```
+
+`ReentrantLock`实现了lock接口，并提供了与Synchronize相同的互斥性和内存可见性
+
+### 公平性
+
+`ReentrantLock`提供了两种公平性的选择，创建一个非公平的锁**（默认）**，或是‘一个公平的锁，
+
++ 公平：FIFO
++ 非公平：先请求的锁不一定先取得
+
+默认使用非公平的原因：性能更高：在恢复一个被挂起的线程与这个线程正在开启运行的时间中存在严重的延迟。
+
+内置的synchronize的锁也是非公平的
+
+### 读写锁
+
+`ReadWriteLock`
+
+## 构建显式的同步工具
+
+### 显式的Condition对象
+
+把Condition对象和一个lock，连接在一起。
+
++ await
++ signal
+
+相当于Object类中提供的wait和notify方法
+
+
+
+### AQS
+
+
+
+#### JUC中的AQS实现
+
++ ReentranLock
++ Semaphore
++ CountDownLatch
++ FutureTask
++ ReentrantReadWriteLock
++ 
+
+ 

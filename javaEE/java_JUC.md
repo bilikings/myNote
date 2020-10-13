@@ -1,4 +1,4 @@
-# 线程
+#    线程
 
 ## 线程同步控制
 
@@ -354,8 +354,6 @@ ReadWriteLock
 + ExecutorService newCachedThreadPool()  创建缓存线程池，可以根据需要自动更改数量
 + ExecutorService newSingleThreadExecutor() 创建单个线程池，这里面只有一个线程
 
-**线程调度方法**
-
 + ScheduledExecutorService newScheduledThreadPool() 创建固定大小的线程，可以延时或者定时执行任务
 
 ```java
@@ -373,3 +371,4 @@ pool.shutdown();
 ## Fork/Join框架
 
 在必要的情况下，把一个大任务拆分（fork）成若干个小任务（拆到不可以在拆的时候），再把一个个小任务运算的结果进行join汇总
+
