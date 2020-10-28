@@ -1,4 +1,4 @@
-## 基本概念合集
+# 基本概念合集
 
 ### Spring框架是哪几部分组成
 
@@ -84,7 +84,7 @@ Spring并不直接管理事务，鹅绒通过这个接口，为各个组件提�
 
 ### Spring实现事务的方式
 
-spring提供两种方式实现事务：
+spring提供两种方式实现事务类型：
 
 + 声明式(基于AOP)
 + 编程式
@@ -94,6 +94,8 @@ spring提供两种方式实现事务：
 声明式事务管理只需要用到`@Transactional` 注解和`@EnableTransactionManagement`。它是基于 Spring AOP 实现的，并且通过注解实现，实现起来简单，对原有代码没有入侵性。并需要注解的方法为Public。
 
 ### 解释AOP模块
+
+个人认为，spring aop就是用代理类来包裹切面，把他们织入到Spring管理的bean中，也就是说
 
 AOP是Spring最为重要的功能之一了，是数据库事务中被广泛使用
 
@@ -118,11 +120,12 @@ AOP思想把业务分成**核心功能**和**周边功能**，周边功能在AOP
 
 然后在功能上按应该在核心前后加上`@Before`和`@After`……
 
-| `@Before`         | 前置通知，在连接点方法前调用                                 |
+| 注解              | 用法                                                         |
 | ----------------- | ------------------------------------------------------------ |
+| `@Before`         | 前置通知，在连接点方法前调用                                 |
 | `@Around`         | 环绕通知，它将覆盖原有方法，但是允许你通过反射调用原有方法，后面会讲 |
-| `@After`          | 后置通知，在连接点方法后调用                                 |
-| `@AfterReturning` | 返回通知，在连接点方法执行并正常返回后调用，要求连接点方法在执行过程中没有发生异常 |
+| `@After`          | 最终通知，在连接点方法后调用                                 |
+| `@AfterReturning` | 后置通知，在连接点方法执行并正常返回后调用，要求连接点方法在执行过程中没有发生异常 |
 | `@AfterThrowing`  | 异常通知，当连接点方法异常时调用                             |
 
 ### Spring中的通知类型与使用场景
@@ -158,8 +161,30 @@ AOP思想把业务分成**核心功能**和**周边功能**，周边功能在AOP
    是在目标方法执行之后的通知，有点像finally语句块一样
 
    使用场景：记录日志（方法调用之后，方法不需要执行成功）
+### 对AOP织入的理解
 
-   
+把**目标对象（target）**使用**切面应用（advice）**包裹起来创建新的代理对象的过程，spring采用的是运行时
+
++ 编译时：当一个类文件被编译时进行织入，这需要特殊的编译器才可以做的到，例如AspectJ的织入编译器；
+
++ 运行时动态代理 ：spring会自动搜索其实现接口并织入advice
++ 使用cglib动态修改类：cglib可以实现字节码级地修改,执行效率比jdk动态代理要高,但创建实例时没有前者快
+
+#### 织入的顺序
+
++ 在进入连接点，高优先级的将被先织入，离开连接点时后织入
++ 当不同的切面里的两个增强处理需要在同一个连接点被织入时，Spring AOP将以随机的顺序来织入这两个增强处理
++ 如果应用需要指定不同切面类里增强处理的优先级，Spring提供了如下两种解决方案：
+  +  让切面类实现org.springframework.core.Ordered接口，实现该接口只需实现一个**int getOrder( )**方法，该方法返回值越小，则优先级越高。
+  + 使用注解@Order(value=int)注解一个aspect类，这样属性越小，优先级越高
+
+### AOP，拦截器，过滤器的区别
+
+三者功能类似，但各有优势，从过滤器--》拦截器--》切面，拦截规则越来越细致
+
+执行顺序依次是过滤器、拦截器、切面。一般情况下数据被过滤的时机越早对服务的性能影响越小，因此我们在编写相对比较公用的代码时，优先考虑过滤器，然后是拦截器，最后是aop。
+
+比如权限校验，一般情况下，所有的请求都需要做登陆校验，此时就应该使用过滤器在最顶层做校验；日志记录，一般日志只会针对部分逻辑做日志记录，而且牵扯到业务逻辑完成前后的日志记录，因此使用过滤器不能细致地划分模块，此时应该考虑拦截器，然而拦截器也是依据URL做规则匹配，因此相对来说不够细致，因此我们会考虑到使用AOP实现，AOP可以针对代码的方法级别做拦截，很适合日志功能。
 
 ### 对Spring Bean的理解
 
@@ -305,3 +330,384 @@ Spring提供了三种装配bean的方式：
 
 + 按配置文件xml方式装配：在resources文件夹下新建spring.xml，注意：beans 以及后面的声明要加上，否则会报错。id对应的名称，待会获取用这个自定的名字，class则是注入的类的路径
 + 注解装配（常用）：直接在对应类名或者方法前加注解
+
+### 简述jdbcTemplate
+
+是为了jdbc更加易于使用，在jdbc上定义了一个抽象层，对jdbc的API进行了简单的封装，以此建立的一个jdbc存取框架。
+
+### 什么是切面Aspect
+
+是AOP中的一种思想，由pointcount和advice组成，包含了横切逻辑和连接点的定义，使用@Aspect标注的类就是Aspect类
+
+### 简述SpringMVC的流程
+
+<img src="https://img2018.cnblogs.com/blog/1121080/201905/1121080-20190509202147059-745656946.jpg" alt="img" style="zoom: 67%;" />
+
+1. 用户向服务端发送一次请求，这个请求会先到前端控制器DispatcherServlet(也叫中央控制器)。
+2. DispatcherServlet接收到请求后会调用HandlerMapping处理器映射器。由此得知，该请求该由哪个Controller来处理（并未调用Controller，只是得知）
+3. DispatcherServlet调用HandlerAdapter处理器适配器，告诉处理器适配器应该要去执行哪个Controller
+4. HandlerAdapter处理器适配器去执行Controller并得到ModelAndView(数据和视图)，并层层返回给DispatcherServlet
+5. DispatcherServlet将ModelAndView交给ViewReslover视图解析器解析，然后返回真正的视图。
+6. DispatcherServlet将模型数据填充到视图中
+7. DispatcherServlet将结果响应给用户
+
+#### 组件说明
+
+- DispatcherServlet：前端控制器，也称为中央控制器，它是整个请求响应的控制中心，组件的调用由它统一调度。
+- HandlerMapping：处理器映射器，它根据用户访问的 URL 映射到对应的后端处理器 Handler。也就是说它知道处理用户请求的后端处理器，但是它并不执行后端处理器，而是将处理器告诉给中央处理器。
+- HandlerAdapter：处理器适配器，它调用后端处理器中的方法，返回逻辑视图 ModelAndView 对象。
+- ViewResolver：视图解析器，将 ModelAndView 逻辑视图解析为具体的视图（如 JSP）。
+- Handler：后端处理器，对用户具体请求进行处理，也就是我们编写的 Controller 类。
+
+### MVC设置转发与重定向
+
+1. 在返回值的前面加”forward”,就可以实现让结果转发；
+2. 在返回值的前面加上”redirect”，就可以让返回值重定向。
+
+### spring配置文件
+
++ 在resource中写application.xml文件
++ 写config配置类，使用`@Configuration`注解说明这是一个配置类
++ 创建一个配置类，在配置类上添加 `@ComponentScan` 注解。该注解默认会扫描该类所在的包下所有的配置类
+
+### @RequestMapping 注解的作用
+
+@RequestMapping 是一个注解，用来标识 http 请求地址与 Controller 类的方法之间的映射。
+
++ 标注类上的作用：用于类上，表示类中的所有响应请求的方法都是以该地址作为父路径。
++ 标注在方法上的作用：拟合url和方法之间的映射
+
+#### @RequestMapping属性
+
++ value: 请求的URL的路径（defult：匹配所有的url）
++ path: 和value一样
++ method: 请求的方法
++ consumes: 允许的媒体类型，也就是Content-Type
++ produces: 相应的媒体类型，也就是Accept
++ params: 请求参数
++ headers: 请求头部
+
+# 应用场景面试题集
+
+### Spring配置Bean实例化的方式
+
++ xml配置使用
++ 静态工厂方法：XML配置和factory类，使用静态工厂方法实例化
++ 实例工厂实例化
++ 使用setter方式：这种方式，只要写上对应的set、get方法，然后再bean.xml文件中利用property注入值即可。
+
+### SpringBoot配置Bean实例化的方式
+
++ @ComponentScan() ：`ComponentScan`做的事情就是告诉`Spring`从哪里找到`bean`
++ 继承ImportSelector类，实现selectImports方法
+
+### Bean注入属性哪几种方式
+
++ 属性注入：@Value
++ 构造方法注入：这里不需要添加@Autowired注解,也不需要在添加@Bean注解,在要使用数据源的类,使用他的构造方法进行注入
++ bean方法的形参注入：在方法上的形参上进行定义要注入的数据源,方法对数据源初始化处理后,通过bean注解将方法的返回值注入到容器中
++ 从配置文件注入：
+
+### 简述几个设计模式在Spring中的使用
+
+#### 简单工厂模式（不属于23种GOF设计模式）
+
+BeanFactory：由一个工厂类根据传入的参数，动态决定应该创建哪一个产品类。
+
+#### 工厂方法模式
+
+通常由应用程序直接使用new创建新的对象，为了将对象的创建和使用相分离，***采用工厂模式,即应用程序将对象的创建及初始化职责交给工厂对象。\***
+
+FactoryBean接口
+
+实现了FactoryBean接口的bean是一类叫做factory的bean。其特点是，spring会在使用getBean()调用获得该bean时，会自动调用该bean的getObject()方法，所以返回的不是factory这个bean，而是这个bean.getOjbect()方法的返回值
+
+#### 单例模式
+
+Spring下默认的bean均为singleton，可以通过singleton=“true|false” 或者 scope=“？”来指定
+
+Spring的依赖注入（包括lazy-init方式）都是发生在AbstractBeanFactory的getBean里。getBean的doGetBean方法调用getSingleton进行bean的创建。
+
+MVC的处理器：
+
+- DispatcherServlet：前端控制器，也称为中央控制器，它是整个请求响应的控制中心，组件的调用由它统一调度。
+- HandlerMapping：处理器映射器，它根据用户访问的 URL 映射到对应的后端处理器 Handler。也就是说它知道处理用户请求的后端处理器，但是它并不执行后端处理器，而是将处理器告诉给中央处理器。
+- HandlerAdapter（不是单例模式）：处理器适配器，它调用后端处理器中的方法，返回逻辑视图 ModelAndView 对象。
+- ViewResolver：视图解析器，将 ModelAndView 逻辑视图解析为具体的视图（如 JSP）。
+- Handler：后端处理器，对用户具体请求进行处理，也就是我们编写的 Controller 类。
+
+#### 适配器模式
+
+上面说的`HandlerAdapter`：处理器适配器，它调用后端处理器中的方法，根据Handler的规则不同，返回不同的逻辑视图 ModelAndView 对象。
+
+#### 装饰器模式
+
+Spring中用到的包装器模式在类名上有两种表现：一种是类名中含有Wrapper（包装），另一种是类名中含有Decorator（装潢）。
+
+为了动态的给一个对象添加一些额外的职责（像AOP编程，但aop的实现是动态代理）
+
+#### 代理模式
+
+AOP底层，就是动态代理模式，
+
+切面在运行时织入，AOP容器为目标创建一个代理对象，就是为了给之前的核心业务包一层。
+
+从结构上来看和Decorator模式类似，但Proxy是控制，更像是一种对功能的限制，而Decorator是增加职责。 
+
+#### 观察者模式
+
+spring事件驱动型模型
+
+事件机制的实现需要三个部分,事件源,事件,事件监听器
+
+ApplicationEvent抽象类[事件]
+
+继承自jdk的EventObject,所有的事件都需要继承ApplicationEvent,并且通过构造器参数source得到事件源.
+
+该类的实现类ApplicationContextEvent表示ApplicaitonContext的容器事件.
+
+#### 策略模式
+
+定义一系列的算法，把它们一个个封装起来，并且使它们可相互替换。使得算法可独立于使用它的客户而变化。
+
+具体就是实例化bean是按需要选择实例方法
+
+#### 模板方法模式
+
+其实就是继承（大雾）
+
+父类定义了骨架（调用哪些方法及顺序），某些特定方法由子类实现。
+
+最大的好处：代码复用，减少重复代码。除了子类要实现的特定方法，其他方法及方法调用顺序都在父类中预先写好了。
+
+所以父类模板方法中有两类方法：
+
+共同的方法：所有子类都会用到的代码
+
+不同的方法：子类要覆盖的方法，分为两种：
+
+- 抽象方法：父类中的是抽象方法，子类必须覆盖
+- 钩子方法：父类中是一个空方法，子类继承了默认也是空的
+
+注：为什么叫钩子，子类可以通过这个钩子（方法），控制父类，因为这个钩子实际是父类的方法（空方法）！
+
+#### 建造者模式
+
+某些命名为XXXbuilder的来
+
+### 依赖注入的三种方式以及优缺点
+
+在Spring 3.x 中，Spring团队建议我们使用setter来注入：
+
+而在Spring 4.x 中，Spring团队不再建议我们使用setter来注入，改为了constructor：
+
+
+
+1. 强制性的依赖性或者当目标不可变时，使用构造函数注入（**应该说尽量都使用构造器来注入**）
+2. 可选或多变的依赖使用setter注入（**建议可以使用构造器结合setter的方式来注入**）
+3. 在大多数的情况下避免field域注入（**感觉大多数同学可能会有异议，毕竟这个方式写起来非常简便，但是它的弊端确实远大于这些优点**）
+
+#### 构造方法注入
+
+**优点：**
+
+- 在构造方法中体现出对其他类的依赖，一眼就能看出这个类需要其他那些类才能工作。
+- 脱离了IOC框架，这个类仍然可以工作，POJO的概念。
+- 一旦对象初始化成功了，这个对象的状态肯定是正确的。
+
+**缺点：**
+
+- 构造函数会有很多参数（Bad smell）。
+- 有些类是需要默认构造函数的，比如MVC框架的Controller类，一旦使用构造函数注入，就无法使用默认构造函数。
+- 这个类里面的有些方法并不需要用到这些依赖（Bad smell）。
+
+#### set方法注入
+
+**优点：**
+
+- 在对象的整个生命周期内，可以随时动态的改变依赖。
+- 非常灵活。
+
+**缺点：**
+
+- 对象在创建后，被设置依赖对象之前这段时间状态是不对的。
+- 不直观，无法清晰地表示哪些属性是必须的
+
+#### 方法参数注入
+
+方法参数注入的意思是在创建对象后，通过自动调用某个方法来注入依赖。
+
+**优点：**
+
+- 比较灵活。
+
+**缺点：**
+
+- 新加入依赖时会破坏原有的方法签名，如果这个方法已经被其他很多模块用到就很麻烦。
+- 与构造方法注入一样，会有很多参数。
+
+### 定义类的作用域
+
+它可以通过bean 定义中的 scope 属性来定义。
+
+当 Spring 要在需要的时候每次生产一个新的 bean 实例，bean 的 scope 属性被指定为 prototype（原型）。另一方面，一个 bean每次使用的时候必须返回同一个实例，这个 bean 的 scope 属性 必须设为singleton。
+
+默认bean生成的是单例
+
+### Bean的作用域
+
+作用域限定了Spring Bean的作用范围
+
+默认(defult)时bean生成的是单例
+
+| Scope       | Description                                                  |
+| ----------- | ------------------------------------------------------------ |
+| singleton   | （默认的）在每个`Spring IoC`容器中，一个`bean`定义对应只会有唯一的一个`bean`实例。 |
+| prototype   | 一个`bean`定义可以有多个`bean`实例。                         |
+| request     | 一个`bean`定义对应于单个`HTTP` 请求的生命周期。也就是说，每个`HTTP` 请求都有一个`bean`实例，且该实例仅在这个`HTTP` 请求的生命周期里有效。该作用域仅适用于`WebApplicationContext`环境。 |
+| session     | 一个`bean` 定义对应于单个`HTTP Session` 的生命周期，也就是说，每个`HTTP Session` 都有一个`bean`实例，且该实例仅在这个`HTTP Session` 的生命周期里有效。该作用域仅适用于`WebApplicationContext`环境。 |
+| application | 一个`bean` 定义对应于单个`ServletContext` 的生命周期。该作用域仅适用于`WebApplicationContext`环境。 |
+| websocket   | 一个`bean` 定义对应于单个`websocket` 的生命周期。该作用域仅适用于`WebApplicationContext`环境。 |
+
+### 在Spring中注入一个JAVA集合
+
++ **<list>**类型用于注入一列值，允许有相同的值。
++ **<set>**类型用于注入一组值，不允许有相同的值。
++ **<map>**类型用于注入一组键值对，键和值都可以为任意类型。
++ **<props>**类型用于注入一组键值对，键和值都只能为 String 类型。
+
+### SpringMvc中如何使用拦截器
+
+拦截器的主要作用是拦截用户请求并进行相应的处理,比如可以用于权限验证
+
+使用方法：
+
+1. 定义一个Interceptor实现类
+2. 实现HandlerInterceptor接口/实现WebRequestInterceptor接口
+
++ handler方法是链式调用的
+
+```java
+public class SpringMVCInterceptor implements HandlerInterceptor { 
+    
+    //在请求前调用
+    @Override  
+    public boolean preHandle(HttpServletRequest request,  
+            HttpServletResponse response, Object handler) throws Exception {  
+        // TODO Auto-generated method stub  
+        return false;  
+    }  
+
+    //在请求后调用，并需要签字拦截器return true
+        @Override  
+    public void postHandle(HttpServletRequest request,  
+            HttpServletResponse response, Object handler,  
+            ModelAndView modelAndView) throws Exception {  
+        // TODO Auto-generated method stub  
+          
+    }  
+    
+        /** 
+     * 该方法也是需要当前对应的Interceptor的preHandle方法的返回值为true时才会执行。该方法将在整个请求完成之后，也就是DispatcherServlet渲染了视图执行， 
+     * 这个方法的主要作用是用于清理资源的，当然这个方法也只能在当前这个Interceptor的preHandle方法的返回值为true时才会执行。 
+     */  
+    @Override  
+    public void afterCompletion(HttpServletRequest request,  
+            HttpServletResponse response, Object handler, Exception ex)  
+    throws Exception {  
+        // TODO Auto-generated method stub  
+          
+    }  
+
+}
+```
+
+```java
+public class AllInterceptor implements WebRequestInterceptor {  
+      
+    /** 
+     * 在请求处理之前执行，该方法主要是用于准备资源数据的，然后可以把它们当做请求属性放到WebRequest中 
+     */  
+    @Override  
+    public void preHandle(WebRequest request) throws Exception {  
+        // TODO Auto-generated method stub  
+        System.out.println("AllInterceptor...............................");  
+        request.setAttribute("request", "request", WebRequest.SCOPE_REQUEST);//这个是放到request范围内的，所以只能在当前请求中的request中获取到  
+        request.setAttribute("session", "session", WebRequest.SCOPE_SESSION);//这个是放到session范围内的，如果环境允许的话它只能在局部的隔离的会话中访问，否则就是在普通的当前会话中可以访问  
+        request.setAttribute("globalSession", "globalSession", WebRequest.SCOPE_GLOBAL_SESSION);//如果环境允许的话，它能在全局共享的会话中访问，否则就是在普通的当前会话中访问  
+    }  
+  
+    /** 
+     * 该方法将在Controller执行之后，返回视图之前执行，ModelMap表示请求Controller处理之后返回的Model对象，所以可以在 
+     * 这个方法中修改ModelMap的属性，从而达到改变返回的模型的效果。 
+     */  
+    @Override  
+    public void postHandle(WebRequest request, ModelMap map) throws Exception {  
+        // TODO Auto-generated method stub  
+        for (String key:map.keySet())  
+            System.out.println(key + "-------------------------");;  
+        map.put("name3", "value3");  
+        map.put("name1", "name1");  
+    }  
+  
+    /** 
+     * 该方法将在整个请求完成之后，也就是说在视图渲染之后进行调用，主要用于进行一些资源的释放 
+     */  
+    @Override  
+    public void afterCompletion(WebRequest request, Exception exception)  
+    throws Exception {  
+        // TODO Auto-generated method stub  
+        System.out.println(exception + "-=-=--=--=-=-=-=-=-=-=-=-==-=--=-=-=-=");  
+    }  
+      
+}  
+```
+
+### SpringMVC中常见注解
+
+>**@RequestMapping**
+>
+>上面有说
+>
+>```java
+>@RestController
+>public class HelloController {
+>@RequestMapping(value="/hello",method= RequestMethod.GET)
+>public String sayHello(@RequestParam("id") Integer id){
+>return "id:"+id;
+>}
+>}
+>```
+>
+>在浏览器中输入地址： localhost:8080/hello?id=1000 ，可以看到如下的结果： 
+>
+>id:1000
+
+>**@RequestParam**
+>
+>用于方法参数的前面，是接收普通参数的注解，当@GetMapping带参数时，获取其参数，可以在required=false设置没参数时候也不会报错，也可以设置默认值
+
+>**@GetMapping**
+>
+>组合注解，是 @RequestMapping(method = RequestMethod.GET) 的缩写，同样的还有@PostMapping
+
+>**@PathVaribale** 获取url中的数据
+>
+>```java
+>@RestController
+>public class HelloController {
+>@RequestMapping(value="/hello/{id}/{name}",method= RequestMethod.GET)
+>public String sayHello(@PathVariable("id") Integer id,@PathVariable("name") String name){
+>return "id:"+id+" name:"+name;
+>}
+>}
+>```
+>
+>在浏览器中输入地址： localhost：8080/hello/100/helloworld 然后会在html页面上打印出：
+>
+>id：100 name：helloworld
+
+### Spring框架事务管理的优点
+
+在以往的JDBCTemplate中事务提交成功，异常处理都是通过Try/Catch 来完成，而在Spring中。Spring容器集成了TransactionTemplate，封装了所有对事务处理的功能，包括异常时事务回滚，操作成功时数据提交等复杂业务功能。这都是由Spring容器来管理，大大减少了程序员的代码量，也对事务有了很好的管理控制。Hibernate中也有对事务的管理，hibernate中事务管理是通过SessionFactory创建和维护Session来完成。而Spring对 SessionFactory配置也进行了整合，不需要在通过hibernate.cfg.xml来对SessionaFactory进行设定。 
+　　这样的话就可以很好的利用Sping对事务管理强大功能。避免了每次对数据操作都要现获得Session实例来启动事务/提交/回滚事务还有繁琐的Try /Catch操作。这些也就是Spring中的AOP（面向切面编程）机制很好的应用。一方面使开发业务逻辑更清晰、专业分工更加容易进行。另一方面就是应用Spirng AOP隔离降低了程序的耦合性使我们可以在不同的应用中将各个切面结合起来使用大大提高了代码重用度。

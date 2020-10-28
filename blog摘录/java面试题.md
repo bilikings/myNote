@@ -24,7 +24,7 @@ HashMap是基于hashing的原理，底层使用哈希表（数组 + 链表）实
 
 2.如果没碰撞直接放到bucket里；
 
-3.如果碰撞了，以链表的形式存在buckets后；
+3.如果碰撞了，以链表的形式存在buckets后（头插法）；
 
 4.如果节点已经存在就替换old value(保证key的唯一性) 
 
@@ -1474,12 +1474,6 @@ https://wenku.baidu.com/view/39d3ee0c0975f46526d3e122.html
 --base64-output=decode-rows --verbose来查看数据的 变动
 
 3.MBR：既使用SBR也使用RBR，默认使用SBR
-
- 
-
- 
-
- 
 
 ### 2.8 怎么发现有问题的SQL?（通过MySQL慢查询日志对有效率问题的SQL进行监控）
 
