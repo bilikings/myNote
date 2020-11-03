@@ -745,7 +745,7 @@ Thread.currentThread.interrupt();
 
 ```java
 public ThreadPoolExecutor(int corePoolSize,//线程池的大小
-                          int maximumPoolSize,//线程池的最大线程数
+                          int maximumPoolSize,//线程池中允许的最大线程数，线程池中的当前线程数目不会超过该值
                           long keepAliveTime,//没有线程任务执行时最多保持多久时间才会停止
                           TimeUnit unit,//参数keepAliveTime的时间单位，有7种取值
                           BlockingQueue workQueue,//一个阻塞队列，用于存储等待执行的任务，影响线程池的排队策略
@@ -760,6 +760,16 @@ public ThreadPoolExecutor(int corePoolSize,//线程池的大小
 4、DiscardPolicy：不处理，丢弃掉。
 5、也可以根据应用场景需要来实现RejectedExecutionHandler接口自定义策略。如记录日志或持久化不能处理的任务。
 ```
+
+**新提交一个任务时的处理流程很明显：**
+
+1. 如果当前线程池的线程数还没有达到基本大小(poolSize < corePoolSize)，**无论是否有空闲的线程新增一个线程处理新提交的任务；**
+
+2. 如果当前线程池的线程数大于或等于基本大小(poolSize >= corePoolSize) **且任务队列未满时**，就将新提交的任务提交到阻塞队列排队，等候处理workQueue.offer(command)；
+
+3. 如果当前线程池的线程数大于或等于基本大小(poolSize >= corePoolSize) **且任务队列满时**；
+   + 当前poolSize<maximumPoolSize，那么就**新增线程**来处理任务；
+   + 当前poolSize=maximumPoolSize，那么意味着线程池的处理能力已经达到了极限，此时需要拒绝新增加的任务。至于如何拒绝处理新增的任务，取决于线程池的饱和策略`RejectedExecutionHandler`
 
 #### 线程的创建与消耗
 
